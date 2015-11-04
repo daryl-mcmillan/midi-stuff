@@ -5,17 +5,15 @@ void setup() {
   TCCR2A = 0;
   TCCR2B = 0;
   TCNT2 = 0;
-  
-  OCR2A = 170; // 16MHz / (31250 * 3 Hz)
-  TCCR2A |= ( 1 << WGM21 );
-  TCCR2B |= ( 1 << CS20 );
+  OCR2A = 170; // 16MHz / (31250 * 3 Hz) - 1
+  TCCR2A = ( 1 << WGM21 );
+  TCCR2B = ( 1 << CS20 );
   TIMSK2 |= ( 1 << OCIE2A );
   pinMode( 7, INPUT );
 }
 
 byte fastReadPin7() {
-  return PIND 
-  >> 7;
+  return PIND >> 7;
 }
 
 // state ids
@@ -50,36 +48,35 @@ const byte STATE_Stop = 108;
 
 // state data
 const byte STATES[] = {
-  STATE_Start, STATE_Idle, 0b0, 0, // STATE_Idle
-  STATE_Tick0A, STATE_Idle, 0b0, 0, // STATE_Start
-  STATE_Tick0B, STATE_Tick0B, 0b0, 0, // STATE_Tick0A
-  STATE_Bit0, STATE_Bit0, 0b0, 0, // STATE_Tick0B
-  STATE_Tick1A, STATE_Tick1A, 0b1, 0, // STATE_Bit0
-  STATE_Tick1B, STATE_Tick1B, 0b0, 0, // STATE_Tick1A
-  STATE_Bit1, STATE_Bit1, 0b0, 0, // STATE_Tick1B
-  STATE_Tick2A, STATE_Tick2A, 0b10, 0, // STATE_Bit1
-  STATE_Tick2B, STATE_Tick2B, 0b0, 0, // STATE_Tick2A
-  STATE_Bit2, STATE_Bit2, 0b0, 0, // STATE_Tick2B
-  STATE_Tick3A, STATE_Tick3A, 0b100, 0, // STATE_Bit2
-  STATE_Tick3B, STATE_Tick3B, 0b0, 0, // STATE_Tick3A
-  STATE_Bit3, STATE_Bit3, 0b0, 0, // STATE_Tick3B
-  STATE_Tick4A, STATE_Tick4A, 0b1000, 0, // STATE_Bit3
-  STATE_Tick4B, STATE_Tick4B, 0b0, 0, // STATE_Tick4A
-  STATE_Bit4, STATE_Bit4, 0b0, 0, // STATE_Tick4B
-  STATE_Tick5A, STATE_Tick5A, 0b10000, 0, // STATE_Bit4
-  STATE_Tick5B, STATE_Tick5B, 0b0, 0, // STATE_Tick5A
-  STATE_Bit5, STATE_Bit5, 0b0, 0, // STATE_Tick5B
-  STATE_Tick6A, STATE_Tick6A, 0b100000, 0, // STATE_Bit5
-  STATE_Tick6B, STATE_Tick6B, 0b0, 0, // STATE_Tick6A
-  STATE_Bit6, STATE_Bit6, 0b0, 0, // STATE_Tick6B
-  STATE_Tick7A, STATE_Tick7A, 0b1000000, 0, // STATE_Bit6
-  STATE_Tick7B, STATE_Tick7B, 0b0, 0, // STATE_Tick7A
-  STATE_Bit7, STATE_Bit7, 0b0, 0, // STATE_Tick7B
+  STATE_Start,  STATE_Idle,   0b00000000, 0, // STATE_Idle
+  STATE_Tick0A, STATE_Idle,   0b00000000, 0, // STATE_Start
+  STATE_Tick0B, STATE_Tick0B, 0b00000000, 0, // STATE_Tick0A
+  STATE_Bit0,   STATE_Bit0,   0b00000000, 0, // STATE_Tick0B
+  STATE_Tick1A, STATE_Tick1A, 0b00000001, 0, // STATE_Bit0
+  STATE_Tick1B, STATE_Tick1B, 0b00000000, 0, // STATE_Tick1A
+  STATE_Bit1,   STATE_Bit1,   0b00000000, 0, // STATE_Tick1B
+  STATE_Tick2A, STATE_Tick2A, 0b00000010, 0, // STATE_Bit1
+  STATE_Tick2B, STATE_Tick2B, 0b00000000, 0, // STATE_Tick2A
+  STATE_Bit2,   STATE_Bit2,   0b00000000, 0, // STATE_Tick2B
+  STATE_Tick3A, STATE_Tick3A, 0b00000100, 0, // STATE_Bit2
+  STATE_Tick3B, STATE_Tick3B, 0b00000000, 0, // STATE_Tick3A
+  STATE_Bit3,   STATE_Bit3,   0b00000000, 0, // STATE_Tick3B
+  STATE_Tick4A, STATE_Tick4A, 0b00001000, 0, // STATE_Bit3
+  STATE_Tick4B, STATE_Tick4B, 0b00000000, 0, // STATE_Tick4A
+  STATE_Bit4,   STATE_Bit4,   0b00000000, 0, // STATE_Tick4B
+  STATE_Tick5A, STATE_Tick5A, 0b00010000, 0, // STATE_Bit4
+  STATE_Tick5B, STATE_Tick5B, 0b00000000, 0, // STATE_Tick5A
+  STATE_Bit5,   STATE_Bit5,   0b00000000, 0, // STATE_Tick5B
+  STATE_Tick6A, STATE_Tick6A, 0b00100000, 0, // STATE_Bit5
+  STATE_Tick6B, STATE_Tick6B, 0b00000000, 0, // STATE_Tick6A
+  STATE_Bit6,   STATE_Bit6,   0b00000000, 0, // STATE_Tick6B
+  STATE_Tick7A, STATE_Tick7A, 0b01000000, 0, // STATE_Bit6
+  STATE_Tick7B, STATE_Tick7B, 0b00000000, 0, // STATE_Tick7A
+  STATE_Bit7,   STATE_Bit7,   0b00000000, 0, // STATE_Tick7B
   STATE_WaitForStop, STATE_WaitForStop, 0b10000000, 0, // STATE_Bit7
-  STATE_WaitForStop, STATE_Stop, 0b0, 0, // STATE_WaitForStop
-  STATE_Start, STATE_Idle, 0b0, 1, // STATE_Stop
+  STATE_WaitForStop, STATE_Stop, 0b00000000, 0, // STATE_WaitForStop
+  STATE_Start,  STATE_Idle,   0b00000000, 1, // STATE_Stop
 };
-
 
 static volatile byte next = STATE_Idle;
 static volatile byte buffer[16];
