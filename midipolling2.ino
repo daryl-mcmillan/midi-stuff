@@ -81,6 +81,7 @@ const byte STATES[] = {
 static volatile byte next = STATE_Idle;
 static volatile byte buffer[16];
 static volatile byte bufferIndex = 0;
+static volatile byte readIndex = 0;
 
 ISR(TIMER2_COMPA_vect) {
 
@@ -103,14 +104,15 @@ void showHex( byte val ) {
 }
 
 void loop() {
-  for( int i=0; i<16; i++ ) {
-    if( i == bufferIndex ) {
-      Serial.print("--");
-    } else {
-      showHex(buffer[i]);
-    }
-    Serial.print( " " );
+  int found = 0;
+  byte readTo = bufferIndex;
+  while( readIndex != readTo ) {
+    found++;
+    showHex( buffer[readIndex] );
+    readIndex = ( readIndex + 1 ) & ( 16 - 1 );
   }
-  Serial.println();
-  delay( 1000 );
+  if( found ) {
+    Serial.println();
+  }
+  delay(1000);
 }
