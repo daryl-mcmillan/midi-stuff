@@ -16,6 +16,11 @@ byte fastReadPin7() {
   return PIND >> 7;
 }
 
+// must be a power of 2
+// buffers are interleaved into 256 bytes
+// so buffer size will be 256/BUFFER_COUNT
+const byte BUFFER_COUNT = 8;
+
 // state ids
 const byte STATE_Idle = 0;
 const byte STATE_Start = 4;
@@ -75,25 +80,27 @@ const byte STATES[] = {
   STATE_Bit7,   STATE_Bit7,   0b00000000, 0, // STATE_Tick7B
   STATE_WaitForStop, STATE_WaitForStop, 0b10000000, 0, // STATE_Bit7
   STATE_WaitForStop, STATE_Stop, 0b00000000, 0, // STATE_WaitForStop
-  STATE_Start,  STATE_Idle,   0b00000000, 1, // STATE_Stop
+  STATE_Start,  STATE_Idle,   0b00000000, BUFFER_COUNT, // STATE_Stop
 };
 
-static volatile byte next = STATE_Idle;
-static volatile byte buffer[16];
+static volatile byte buffer[256];
 static volatile byte bufferIndex = 0;
 static volatile byte readIndex = 0;
 
 ISR(TIMER2_COMPA_vect) {
-
+  static byte next = STATE_Idle;
+  static byte currentByte = 0;
   byte val = fastReadPin7();
   byte state = next;
-  byte captureMask = STATES[state+2];
   byte bufferShift = STATES[state+3];
+  byte captureMask = STATES[state+2];
   next = STATES[state+val];
-
-  buffer[bufferIndex] &= ~captureMask;
-  buffer[bufferIndex] |= captureMask & (0-val);
-  bufferIndex = (bufferIndex + bufferShift) & (16-1);
+  currentByte |= captureMask & (0-val);
+  if( bufferShift ) {
+    buffer[bufferIndex] = currentByte;
+    bufferIndex += bufferShift;
+    currentByte = 0;
+  }
 }
 
 static char hex[] = { '0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'A', 'B', 'C', 'D', 'E', 'F' };
@@ -104,15 +111,27 @@ void showHex( byte val ) {
 }
 
 void loop() {
+
+  unsigned long time = micros();
+  unsigned long ticks = 0;
+  while( micros() - time < 1000000 ) {
+    ticks++;
+  }
+  Serial.println( ticks );
+
   int found = 0;
   byte readTo = bufferIndex;
-  while( readIndex != readTo ) {
-    found++;
-    showHex( buffer[readIndex] );
-    readIndex = ( readIndex + 1 ) & ( 16 - 1 );
+  if( readTo != readIndex ) {
+    delay(100);
+    readTo = bufferIndex;
+    while( readIndex != readTo ) {
+      found++;
+      if( buffer[readIndex] & 0x80 ) {
+        Serial.println();
+      }
+      showHex( buffer[readIndex] );
+      readIndex += BUFFER_COUNT;
+    }
   }
-  if( found ) {
-    Serial.println();
-  }
-  delay(1000);
+  delay(100);
 }
