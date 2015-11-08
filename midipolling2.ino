@@ -1,10 +1,10 @@
-static byte notes[256];
+static int notes[256];
 
 void setup() {
-  int freq = 44;
+  unsigned long freq = 440;
   for( int i=0; i<256; i++ ) {
-    notes[i] = freq;
-    freq = freq * 5 / 4;
+    notes[i] = freq / 80;
+    freq = freq * 16 / 15;
   }
   
   Serial.begin(115200);
@@ -135,7 +135,7 @@ void loop() {
   for(;;) {
     byte b = readByte();
     if( b == 0x90 ) {
-      int note = readByte();
+      int note = notes[readByte()];
       tone(8, note);
       showHex(note);
       Serial.println();
