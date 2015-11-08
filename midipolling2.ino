@@ -1,15 +1,25 @@
+static byte notes[256];
+
 void setup() {
+  int freq = 44;
+  for( int i=0; i<256; i++ ) {
+    notes[i] = freq;
+    freq = freq * 5 / 4;
+  }
+  
   Serial.begin(115200);
   Serial.println( "starting..." );
 
-  TCCR2A = 0;
-  TCCR2B = 0;
-  TCNT2 = 0;
-  OCR2A = 170; // 16MHz / (31250 * 3 Hz) - 1
-  TCCR2A = ( 1 << WGM21 );
-  TCCR2B = ( 1 << CS20 );
-  TIMSK2 |= ( 1 << OCIE2A );
-  pinMode( 7, INPUT );
+  TCCR1A = 0;
+  TCCR1B = 0;
+  TCNT1 = 0;
+  TIFR1 = 0;
+  OCR1A = 170;
+  OCR1B = 31;
+  TCCR1B |= ( 1 << WGM12 );
+  TCCR1B |= ( 1 << CS10 );
+  TIMSK1 |= ( 1 << OCIE1A );
+  pinMode( 7, INPUT );  
 }
 
 byte fastReadPin7() {
@@ -87,7 +97,7 @@ static volatile byte buffer[256];
 static volatile byte bufferIndex = 0;
 static volatile byte readIndex = 0;
 
-ISR(TIMER2_COMPA_vect) {
+ISR(TIMER1_COMPA_vect) {
   static byte next = STATE_Idle;
   static byte currentByte = 0;
   byte val = fastReadPin7();
@@ -110,28 +120,27 @@ void showHex( byte val ) {
   Serial.print( hex[val&0xF] );
 }
 
-void loop() {
-
-  unsigned long time = micros();
-  unsigned long ticks = 0;
-  while( micros() - time < 1000000 ) {
-    ticks++;
-  }
-  Serial.println( ticks );
-
-  int found = 0;
-  byte readTo = bufferIndex;
-  if( readTo != readIndex ) {
-    delay(100);
-    readTo = bufferIndex;
-    while( readIndex != readTo ) {
-      found++;
-      if( buffer[readIndex] & 0x80 ) {
-        Serial.println();
-      }
-      showHex( buffer[readIndex] );
+byte readByte() {
+  for( ;; ) {
+    byte readTo = bufferIndex;
+    if( readTo != readIndex ) {
+      byte result = buffer[readIndex];
       readIndex += BUFFER_COUNT;
+      return result;
     }
   }
-  delay(100);
+}
+
+void loop() {
+  for(;;) {
+    byte b = readByte();
+    if( b == 0x90 ) {
+      int note = readByte();
+      tone(8, note);
+      showHex(note);
+      Serial.println();
+    } else if( b == 0x80 ) {
+      noTone(8);
+    }
+  }
 }
